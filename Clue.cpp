@@ -4,13 +4,13 @@
 using std::string;
 using namespace clue;
 
-Clue::Clue(std::string clue, std::string answer, int value) {
+Clue::Clue(string clue, string answer, int value, bool is_daily_double) {
   m_clue = clue;
   m_answer = answer;
   m_value = value;
+  m_is_daily_double = is_daily_double;
 }
 
-bool Clue::test_answer(std::string attempt) {
+bool Clue::test_answer(string attempt) {
   return m_answer.compare(attempt) == 0;
 }
-

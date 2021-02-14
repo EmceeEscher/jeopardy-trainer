@@ -3,4 +3,4 @@ project(jeopardy_trainer)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(jeopardy_trainer main.cpp Clue.h Clue.cpp)
+add_executable(jeopardy_trainer main.cpp Clue.h Clue.cpp Category.cpp Category.h)
