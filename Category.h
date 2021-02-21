@@ -14,6 +14,9 @@ namespace category {
     science,
     literature,
     film,
+    music,
+    theater,
+    arts,
     vocabulary,
     wordplay,
     other,
@@ -26,10 +29,16 @@ namespace category {
     Type m_type;
     std::vector<clue::Clue> m_clues;
     bool m_is_double_jeopardy;
+    bool m_is_final_jeopardy;
 
    public:
-    // Constructors
-    Category(std::string title, std::vector<clue::Clue> &clues, bool is_double_jeopardy, Type type=unknown);
+    // Constructor
+    Category(
+        std::string title,
+        std::vector<clue::Clue> &clues,
+        bool is_double_jeopardy,
+        bool is_final_jeopardy,
+        Type type=unknown);
 
     // Getters / setters
     std::string get_title() { return m_title; };
@@ -37,9 +46,10 @@ namespace category {
     Type get_type() { return m_type; };
     void set_type(Type type) { m_type = type; };
 
-    std::vector<clue::Clue> get_clues() { return m_clues; };
+    std::vector<clue::Clue> const &get_clues() { return m_clues; };
 
     bool get_is_double_jeopardy() { return m_is_double_jeopardy; };
+    bool get_is_final_jeopardy() { return m_is_final_jeopardy; };
   };
 }
 
