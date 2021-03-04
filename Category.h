@@ -46,7 +46,8 @@ namespace category {
     Type get_type() { return m_type; };
     void set_type(Type type) { m_type = type; };
 
-    std::vector<clue::Clue> const &get_clues() { return m_clues; };
+    // TODO: I had this as const but then it made problems? Not sure what is correct
+    std::vector<clue::Clue> &get_clues() { return m_clues; };
 
     bool get_is_double_jeopardy() { return m_is_double_jeopardy; };
     bool get_is_final_jeopardy() { return m_is_final_jeopardy; };
