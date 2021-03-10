@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <curl/curl.h>
 
 #include "Clue.h"
 #include "Category.h"
@@ -17,5 +18,16 @@ int main() {
 
   std::cout << test_category.get_title() << std::endl;
   std::cout << test_category.get_clues().at(0).get_clue() << std::endl;
+
+  CURL* curl_handle = curl_easy_init();
+
+  if(curl_handle) {
+    curl_easy_setopt(curl_handle, CURLOPT_URL, "https://www.j-archive.com/showgame.php?game_id=6699");
+    CURLcode res = curl_easy_perform(curl_handle);
+
+    std::cout << res << std::endl;
+
+    curl_easy_cleanup(curl_handle);
+  }
   return 0;
 }
