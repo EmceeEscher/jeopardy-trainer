@@ -7,8 +7,19 @@
 #include "Game.h"
 
 namespace web_parser {
-  CURLcode retrieve_web_page(const char *url);
-  game::Game parse_game_page(CURLcode page_data);
+  class WebParser {
+   private:
+    struct MemoryStruct {
+      char *memory;
+      size_t size;
+    };
+    static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userdata);
+
+   public:
+    WebParser() = default;
+    CURLcode retrieve_web_page(const char *url);
+    game::Game parse_game_page(CURLcode page_data);
+  };
 }
 
 #endif //JEOPARDY_TRAINER__WEBPARSER_H_

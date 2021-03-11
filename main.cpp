@@ -9,6 +9,7 @@
 
 using namespace clue;
 using namespace category;
+using namespace web_parser;
 
 int main() {
   Clue test_clue("what this object is", "clue", 200, false, false);
@@ -20,6 +21,8 @@ int main() {
   std::cout << test_category.get_title() << std::endl;
   std::cout << test_category.get_clues().at(0).get_clue() << std::endl;
 
-  web_parser::retrieve_web_page("https://www.j-archive.com/showgame.php?game_id=6699");
+  WebParser parser = WebParser();
+
+  parser.retrieve_web_page("https://www.j-archive.com/showgame.php?game_id=6699");
   return 0;
 }
