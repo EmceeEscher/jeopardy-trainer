@@ -3,8 +3,11 @@
 
 #include <curl/curl.h>
 #include <string>
+#include <functional>
+#include <libxml/HTMLparser.h>
 
 #include "Game.h"
+#include "Clue.h"
 
 namespace web_parser {
   class WebParser {
@@ -13,7 +16,12 @@ namespace web_parser {
       char *memory;
       size_t size;
     };
-    static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userdata);
+    static size_t write_memory_callback(void *contents, size_t size, size_t nmemb, void *userdata);
+    static xmlNode *find_node(xmlNode *root_node, std::function<bool (xmlNode *)> search_func);
+    static bool is_clue_node(xmlNode *node);
+    static void parse_nodes(xmlNode *root_node, std::function<void (xmlNode *, void *)> parse_func, void *parse_struct);
+    static void parse_clue_helper(xmlNode *node, void *clue_ptr);
+    clue::Clue parse_clue(xmlNode *clue_node);
 
    public:
     WebParser() = default;
