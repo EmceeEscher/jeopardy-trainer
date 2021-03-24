@@ -18,7 +18,10 @@ namespace web_parser {
     };
     static size_t write_memory_callback(void *contents, size_t size, size_t nmemb, void *userdata);
     static xmlNode *find_node(xmlNode *root_node, std::function<bool (xmlNode *)> search_func);
+    static bool check_node(xmlNode *node, const char *node_type, const char *prop_type, const char *class_name);
     static bool is_clue_node(xmlNode *node);
+    static bool is_category_node(xmlNode *node);
+    static bool is_jeopardy_node(xmlNode *node);
     static void parse_nodes(xmlNode *root_node, std::function<void (xmlNode *, void *)> parse_func, void *parse_struct);
     static void parse_clue_helper(xmlNode *node, void *clue_ptr);
     clue::Clue parse_clue(xmlNode *clue_node);

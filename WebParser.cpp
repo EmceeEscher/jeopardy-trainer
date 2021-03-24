@@ -52,6 +52,9 @@ CURLcode WebParser::retrieve_web_page(const char *url) {
       xmlNode *root_element = xmlDocGetRootElement(doc);
 
       // TODO find all clues, and also build categories
+      xmlNode *jeopardy_node = find_node(root_element, is_jeopardy_node);
+
+
       xmlNode *clue_node = find_node(root_element, is_clue_node);
       Clue clue = parse_clue(clue_node);
 
@@ -92,15 +95,27 @@ xmlNode *WebParser::find_node(xmlNode *root_node, std::function<bool(xmlNode *)>
   return NULL;
 }
 
-bool WebParser::is_clue_node(xmlNode *node) {
-  if (node->type == XML_ELEMENT_NODE && !xmlStrcmp(node->name, (const xmlChar *)"td")) {
-    xmlChar *id = xmlGetProp(node, (const xmlChar *)"class");
-    bool is_clue_class = xmlStrcmp(id, (const xmlChar *)"clue");
+bool WebParser::check_node(xmlNode *node, const char *node_type, const char *prop_type, const char *class_name) {
+  if (node->type == XML_ELEMENT_NODE && !xmlStrcmp(node->name, (const xmlChar *)node_type)) {
+    xmlChar *id = xmlGetProp(node, (const xmlChar *)prop_type);
+    bool is_correct_class = xmlStrcmp(id, (const xmlChar *)class_name);
     xmlFree(id);
 
-    return !is_clue_class;
+    return !is_correct_class;
   }
   return false;
+}
+
+bool WebParser::is_clue_node(xmlNode *node) {
+  return check_node(node, "td", "class", "clue");
+}
+
+bool WebParser::is_category_node(xmlNode *node) {
+  return check_node(node, "td", "class", "category");
+}
+
+bool WebParser::is_jeopardy_node(xmlNode *node) {
+  return check_node(node, "div", "id", "jeopardy_round");
 }
 
 void WebParser::parse_nodes(xmlNode *root_node, std::function<void (xmlNode *, void *)> parse_func, void *parse_struct) {
