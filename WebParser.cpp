@@ -6,8 +6,10 @@
 #include <libxml/xmlsave.h>
 
 using std::string;
+using std::vector;
 using game::Game;
 using clue::Clue;
+using category::Category;
 using namespace web_parser;
 
 // This function is taken almost verbatim from a libcurl tutorial: https://curl.se/libcurl/c/getinmemory.html
@@ -53,10 +55,7 @@ CURLcode WebParser::retrieve_web_page(const char *url) {
 
       // TODO find all clues, and also build categories
       xmlNode *jeopardy_node = find_node(root_element, is_jeopardy_node);
-
-
-      xmlNode *clue_node = find_node(root_element, is_clue_node);
-      Clue clue = parse_clue(clue_node);
+      vector<Category> categories = parse_round(jeopardy_node);
 
       xmlFreeDoc(doc);
       xmlCleanupParser();
@@ -97,11 +96,16 @@ xmlNode *WebParser::find_node(xmlNode *root_node, std::function<bool(xmlNode *)>
 
 bool WebParser::check_node(xmlNode *node, const char *node_type, const char *prop_type, const char *class_name) {
   if (node->type == XML_ELEMENT_NODE && !xmlStrcmp(node->name, (const xmlChar *)node_type)) {
-    xmlChar *id = xmlGetProp(node, (const xmlChar *)prop_type);
-    bool is_correct_class = xmlStrcmp(id, (const xmlChar *)class_name);
-    xmlFree(id);
+    if (strlen(prop_type) != 0) {
+      xmlChar *id = xmlGetProp(node, (const xmlChar *) prop_type);
+      bool is_correct_class = !xmlStrcmp(id, (const xmlChar *) class_name);
+      xmlFree(id);
 
-    return !is_correct_class;
+      return is_correct_class;
+    } else {
+      // if no prop_type is given, only check the node_type
+      return true;
+    }
   }
   return false;
 }
@@ -116,6 +120,10 @@ bool WebParser::is_category_node(xmlNode *node) {
 
 bool WebParser::is_jeopardy_node(xmlNode *node) {
   return check_node(node, "div", "id", "jeopardy_round");
+}
+
+bool WebParser::is_tr_node(xmlNode *node) {
+  return check_node(node, "tr", "", "");
 }
 
 void WebParser::parse_nodes(xmlNode *root_node, std::function<void (xmlNode *, void *)> parse_func, void *parse_struct) {
@@ -178,8 +186,51 @@ Clue WebParser::parse_clue(xmlNode *clue_node) {
   // Need to call on children, because the clue_node itself has other clues in node->next
   parse_nodes(clue_node->children, parse_clue_helper, clue_ptr);
 
-  // TODO: figure out if I should return a pointer here?
   return clue;
+}
+
+void WebParser::parse_category_name_helper(xmlNode *node, void *category_ptr) {
+  Category *cast_category_ptr = (Category *)category_ptr;
+
+  if (node->type == XML_ELEMENT_NODE && !xmlStrcmp(node->name, (const xmlChar *)"td")) {
+    xmlChar *html_class = xmlGetProp(node, (const xmlChar *) "class");
+
+    if (!xmlStrcmp(html_class, (const xmlChar *) "category_name")) {
+      xmlNode *text_node = node->children;
+      cast_category_ptr->m_title = (char *) text_node->content;
+    }
+
+    xmlFree(html_class);
+  }
+}
+
+Category WebParser::initialize_category(xmlNode *category_node) {
+  Category category;
+  Category *category_ptr = &category;
+
+  // Need to call on children, because the category_node itself has other categories in node->next
+  parse_nodes(category_node->children, parse_category_name_helper, category_ptr);
+  category.m_clues = vector<Clue>();
+
+  return category;
+}
+
+vector<Category> WebParser::parse_round(xmlNode *round_node) {
+  vector<Category> categories;
+
+  xmlNode *first_category_node = find_node(round_node, is_category_node);
+
+  for (xmlNode *curr_node = first_category_node; curr_node; curr_node = curr_node->next) {
+    if (curr_node->type == XML_ELEMENT_NODE) {
+      categories.push_back(initialize_category(curr_node));
+    }
+  }
+
+  // First tr node is the categories, it's next is the text node, and the text node's next is the first row of clues
+  xmlNode *first_clue_row_node = find_node(round_node, is_tr_node)->next->next;
+  //TODO: verify that this is actually the first clue row, and parse them, and add them to the category
+
+  return categories;
 }
 
 
