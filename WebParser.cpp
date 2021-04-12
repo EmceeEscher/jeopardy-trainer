@@ -33,14 +33,15 @@ size_t WebParser::write_memory_callback(void *contents, size_t size, size_t nmem
 }
 
 CURLcode WebParser::retrieve_web_page(const char *url) {
-  struct MemoryStruct page_mem_chunk;
-
-  page_mem_chunk.memory = (char *)malloc(1);  /* will be grown as needed by the realloc in the callback */
-  page_mem_chunk.size = 0;    /* no data at this point */
 
   CURL *curl_handle = curl_easy_init();
 
   if (curl_handle) {
+    struct MemoryStruct page_mem_chunk;
+
+    page_mem_chunk.memory = (char *)malloc(1);  /* will be grown as needed by the realloc in the callback */
+    page_mem_chunk.size = 0;    /* no data at this point */
+
     curl_easy_setopt(curl_handle, CURLOPT_URL, url);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_memory_callback);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&page_mem_chunk);
@@ -51,11 +52,8 @@ CURLcode WebParser::retrieve_web_page(const char *url) {
 
     if (res == CURLE_OK) { // web page is read and stored in page_mem_chunk.memory
       htmlDocPtr doc = htmlReadMemory(page_mem_chunk.memory, page_mem_chunk.size, url, NULL, 0);
-      xmlNode *root_element = xmlDocGetRootElement(doc);
 
-      // TODO find all clues, and also build categories
-      xmlNode *jeopardy_node = find_node(root_element, is_jeopardy_node);
-      vector<Category> categories = parse_round(jeopardy_node);
+      Game game = parse_game_page(doc);
 
       xmlFreeDoc(doc);
       xmlCleanupParser();
@@ -65,12 +63,8 @@ CURLcode WebParser::retrieve_web_page(const char *url) {
     free(page_mem_chunk.memory);
     return res;
   } else {
-    free(page_mem_chunk.memory);
     return CURLE_FAILED_INIT;
   }
-
-  //free(page_mem_chunk.memory);
-  // TODO figure out what to return here (probably not a CURLcode)
 }
 
 // TODO figure out how to return multiple things
@@ -122,6 +116,14 @@ bool WebParser::is_jeopardy_node(xmlNode *node) {
   return check_node(node, "div", "id", "jeopardy_round");
 }
 
+bool WebParser::is_double_jeopardy_node(xmlNode *node) {
+  return check_node(node, "div", "id", "double_jeopardy_round");
+}
+
+bool WebParser::is_final_jeopardy_node(xmlNode *node) {
+  return check_node(node, "div", "id", "final_jeopardy_round");
+}
+
 bool WebParser::is_tr_node(xmlNode *node) {
   return check_node(node, "tr", "", "");
 }
@@ -143,22 +145,44 @@ void WebParser::parse_clue_helper(xmlNode *node, void *clue_ptr) {
 
     if(!xmlStrcmp(html_class, (const xmlChar *)"clue_text")) {
       xmlNode *text_node = node->children;
-      cast_clue_ptr->m_clue = (char *)text_node->content;
 
-    } else if (!xmlStrcmp(html_class, (const xmlChar *)"clue_value")) {
-      xmlNode *text_node = node->children;
-      // Strings are of form "$200". Strip the $ and then convert to int
-      string money_string = (char *)text_node->content;
-      cast_clue_ptr->m_value = stoi(money_string.substr(1));
+      // The libxml parser doesn't like links or double hyphens (for some reason), and splits up the text node
+      // So if those show up we need to do additional processing
+      // if text_node->next is null, that means no additional parsing necessary
+      if (!text_node->next) {
+        cast_clue_ptr->m_clue = (char *) text_node->content;
+      }
+      // If it has a next node and it's a span, that means it's the weird double hyphen behavior
+      // The best info I can find is https://gitlab.gnome.org/GNOME/libxml2/-/commit/3c0d62b4193c5c1fe15a143a138f76ffa1278779
+      // So manually recreate it and get the second half of the clue (in node->next->next)
+      else if (!xmlStrcmp(text_node->next->name, (const xmlChar *)"span")) {
+        // TODO: there's gotta be a better way of casting
+        string full_clue =
+            (string) (const char *)text_node->content + "--" +
+            (string) (const char *)text_node->next->next->content;
 
-      // TODO test daily double case
+        cast_clue_ptr->m_clue = full_clue;
+      } else if (!xmlStrcmp(text_node->next->name, (const xmlChar *)"a")) {
+        xmlNode *link_node = text_node->next;
+
+        // TODO check the case where the link is at the start of the clue
+
+        string full_clue =
+            (string) (const char *)text_node->content +
+            (string) (const char *)link_node->children->content;
+
+        // have to add this check in case the link is at the end of the clue
+        if (link_node->next) {
+          full_clue += (string) (const char *) text_node->next->next->content;
+        }
+
+        cast_clue_ptr->m_clue = full_clue;
+        cast_clue_ptr->m_link = (char *)link_node->properties->children->content; // gets the text value of the href property
+      }
+
     } else if (!xmlStrcmp(html_class, (const xmlChar *)"clue_value_daily_double")) {
-      xmlNode *text_node = node->children;
-      // Strings are of form "DD: $200". Strip the prefix and then convert to int
-      string money_string = (char *)text_node->content;
-      cast_clue_ptr->m_value = stoi(money_string.substr(5));
+      // If it has this class, then it's a daily double, but I don't care how much the contestant bet
       cast_clue_ptr->m_is_daily_double = true;
-
     }
     xmlFree(html_class);
 
@@ -167,18 +191,22 @@ void WebParser::parse_clue_helper(xmlNode *node, void *clue_ptr) {
 
     string mouseover_str = (char *)onmouseover;
     string start_substr = "<em class=\"correct_response\">";
+    int start_index = mouseover_str.find(start_substr);
+    if (start_index == -1) {
+      // if it wasn't found, then it's probably the final jeopardy node, which has a slightly different start substr
+      start_substr = "<em class=\\\"correct_response\\\">";
+      start_index = mouseover_str.find(start_substr);
+    }
     string end_substr = "</em>";
-    int start_loc = mouseover_str.find(start_substr) + start_substr.size();
+    int start_loc = start_index + start_substr.size();
     int end_loc = mouseover_str.find(end_substr);
     string answer_str = mouseover_str.substr(start_loc, (end_loc - start_loc));
 
-    cast_clue_ptr->m_answer = answer_str;
-
     xmlFree(onmouseover);
+    cast_clue_ptr->m_answer = answer_str;
   }
 }
 
-// TODO will need to write a separate Final Jeopardy parser bc that's different
 Clue WebParser::parse_clue(xmlNode *clue_node) {
   Clue clue;
   Clue *clue_ptr = &clue;
@@ -204,36 +232,85 @@ void WebParser::parse_category_name_helper(xmlNode *node, void *category_ptr) {
   }
 }
 
-Category WebParser::initialize_category(xmlNode *category_node) {
+Category WebParser::initialize_category(xmlNode *category_node, bool is_double_jeopardy, bool is_final_jeopardy) {
   Category category;
   Category *category_ptr = &category;
 
   // Need to call on children, because the category_node itself has other categories in node->next
   parse_nodes(category_node->children, parse_category_name_helper, category_ptr);
   category.m_clues = vector<Clue>();
+  category.m_is_double_jeopardy = is_double_jeopardy;
+  category.m_is_final_jeopardy = is_final_jeopardy;
 
   return category;
 }
 
-vector<Category> WebParser::parse_round(xmlNode *round_node) {
+vector<Category> WebParser::parse_round(xmlNode *round_node, bool is_double_jeopardy) {
   vector<Category> categories;
 
   xmlNode *first_category_node = find_node(round_node, is_category_node);
 
   for (xmlNode *curr_node = first_category_node; curr_node; curr_node = curr_node->next) {
     if (curr_node->type == XML_ELEMENT_NODE) {
-      categories.push_back(initialize_category(curr_node));
+      categories.push_back(initialize_category(curr_node, is_double_jeopardy, false));
     }
   }
 
   // First tr node is the categories, it's next is the text node, and the text node's next is the first row of clues
-  xmlNode *first_clue_row_node = find_node(round_node, is_tr_node)->next->next;
-  //TODO: verify that this is actually the first clue row, and parse them, and add them to the category
+  xmlNode *curr_row_node = find_node(round_node, is_tr_node);
+  for (int i = 0; i < 5; i++) {
+    curr_row_node = curr_row_node->next->next;
+    xmlNode *clue_node = find_node(curr_row_node, is_clue_node);
+    for (int j = 0; j < 6; j++) {
+      Clue clue = parse_clue(clue_node);
+
+      int value = 200 * (i + 1);
+      if (is_double_jeopardy) {
+        value *= 2;
+      }
+      clue.m_value = value;
+      
+      categories[j].m_clues.push_back(clue);
+      clue_node = clue_node->next->next;
+    }
+  }
 
   return categories;
 }
 
+Category WebParser::parse_final_jeopardy(xmlNode *round_node) {
+  xmlNode *category_node = find_node(round_node, is_category_node);
+  Category category = initialize_category(category_node, false, true);
 
-//  Game parse_game_page(CURLcode page_data) {
-//    htmlDocPtr doc = htmlReadMemory(page_data, (unsigned)strlen(page_data), "noname.html", NULL, 0);
-//  }
+  // For final jeopardy, the answer is attached to the category HTML node (not the clue), so we have to pass the entire
+  // round node to the parser
+  Clue clue = parse_clue(round_node);
+  clue.m_is_final_jeopardy = true;
+  clue.m_value = 0;
+
+  category.m_clues.push_back(clue);
+
+  return category;
+}
+
+Game WebParser::parse_game_page(htmlDocPtr doc) {
+  xmlNode *root_element = xmlDocGetRootElement(doc);
+
+  Game game;
+
+  //TODO: get air date
+
+  xmlNode *jeopardy_node = find_node(root_element, is_jeopardy_node);
+  vector<Category> single_jeopardy_categories = parse_round(jeopardy_node, false);
+  game.m_single_jeopardy = single_jeopardy_categories;
+
+  xmlNode *double_jeopardy_node = find_node(root_element, is_double_jeopardy_node);
+  vector<Category> double_jeopardy_categories = parse_round(double_jeopardy_node, true);
+  game.m_double_jeopardy = double_jeopardy_categories;
+
+  xmlNode *final_jeopardy_node = find_node(root_element, is_final_jeopardy_node);
+  Category final_jeopardy = parse_final_jeopardy(final_jeopardy_node);
+  game.m_final_jeopardy = final_jeopardy;
+
+  return game;
+}

@@ -24,18 +24,21 @@ namespace web_parser {
     static bool is_clue_node(xmlNode *node);
     static bool is_category_node(xmlNode *node);
     static bool is_jeopardy_node(xmlNode *node);
+    static bool is_double_jeopardy_node(xmlNode *node);
+    static bool is_final_jeopardy_node(xmlNode *node);
     static bool is_tr_node(xmlNode *node);
     static void parse_nodes(xmlNode *root_node, std::function<void (xmlNode *, void *)> parse_func, void *parse_struct);
     static void parse_clue_helper(xmlNode *node, void *clue_ptr);
     clue::Clue parse_clue(xmlNode *clue_node);
     static void parse_category_name_helper(xmlNode *node, void *category_ptr);
-    category::Category initialize_category(xmlNode *category_node);
-    std::vector<category::Category> parse_round(xmlNode *round_node);
+    category::Category initialize_category(xmlNode *category_node, bool is_double_jeopardy, bool is_final_jeopardy);
+    std::vector<category::Category> parse_round(xmlNode *round_node, bool is_double_jeopardy);
+    category::Category parse_final_jeopardy(xmlNode *round_node);
 
    public:
     WebParser() = default;
     CURLcode retrieve_web_page(const char *url);
-    game::Game parse_game_page(CURLcode page_data);
+    game::Game parse_game_page(htmlDocPtr doc);
   };
 }
 
