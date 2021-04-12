@@ -313,6 +313,7 @@ Game WebParser::parse_game_page(htmlDocPtr doc) {
   Game game;
 
   //TODO: get air date
+  //TODO: add clue/category notes
 
   xmlNode *jeopardy_node = find_node(root_element, is_jeopardy_node);
   vector<Category> single_jeopardy_categories = parse_round(jeopardy_node, false);
@@ -321,13 +322,6 @@ Game WebParser::parse_game_page(htmlDocPtr doc) {
   xmlNode *double_jeopardy_node = find_node(root_element, is_double_jeopardy_node);
   vector<Category> double_jeopardy_categories = parse_round(double_jeopardy_node, true);
   game.m_double_jeopardy = double_jeopardy_categories;
-
-  for (vector<Category>::iterator it = game.m_double_jeopardy.begin(); it != game.m_double_jeopardy.end(); it++) {
-    std::printf("\nCategory: %s", it->m_title.c_str());
-    for (vector<Clue>::iterator jt = it->m_clues.begin(); jt != it->m_clues.end(); jt++) {
-      std::printf("\nClue: %s", jt->m_clue.c_str());
-    }
-  }
 
   xmlNode *final_jeopardy_node = find_node(root_element, is_final_jeopardy_node);
   Category final_jeopardy = parse_final_jeopardy(final_jeopardy_node);
