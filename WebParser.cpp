@@ -51,7 +51,8 @@ CURLcode WebParser::retrieve_web_page(const char *url) {
     // TODO figure out how to divide this. (like how should the functions be divvied up?)
 
     if (res == CURLE_OK) { // web page is read and stored in page_mem_chunk.memory
-      htmlDocPtr doc = htmlReadMemory(page_mem_chunk.memory, page_mem_chunk.size, url, NULL, 0);
+      // Option 32 is HTML_PARSE_NOERROR; used to ignore errors from unescaped & symbols
+      htmlDocPtr doc = htmlReadMemory(page_mem_chunk.memory, page_mem_chunk.size, url, NULL, 32);
 
       Game game = parse_game_page(doc);
 
@@ -144,36 +145,45 @@ void WebParser::parse_clue_helper(xmlNode *node, void *clue_ptr) {
     xmlChar *html_class = xmlGetProp(node, (const xmlChar *)"class");
 
     if(!xmlStrcmp(html_class, (const xmlChar *)"clue_text")) {
-      xmlNode *text_node = node->children;
+      xmlNode *first_node = node->children;
 
       // The libxml parser doesn't like links or double hyphens (for some reason), and splits up the text node
       // So if those show up we need to do additional processing
-      // if text_node->next is null, that means no additional parsing necessary
-      if (!text_node->next) {
-        cast_clue_ptr->m_clue = (char *) text_node->content;
+      // if first_node->next is null, that means no additional parsing necessary
+      if (!first_node->next) {
+        cast_clue_ptr->m_clue = (char *) first_node->content;
       }
       // If it has a next node and it's a span, that means it's the weird double hyphen behavior
       // The best info I can find is https://gitlab.gnome.org/GNOME/libxml2/-/commit/3c0d62b4193c5c1fe15a143a138f76ffa1278779
       // So manually recreate it and get the second half of the clue (in node->next->next)
-      else if (!xmlStrcmp(text_node->next->name, (const xmlChar *)"span")) {
+      else if (!xmlStrcmp(first_node->next->name, (const xmlChar *)"span")) {
         // TODO: there's gotta be a better way of casting
         string full_clue =
-            (string) (const char *)text_node->content + "--" +
-            (string) (const char *)text_node->next->next->content;
+            (string) (const char *)first_node->content + "--" +
+            (string) (const char *)first_node->next->next->content;
 
         cast_clue_ptr->m_clue = full_clue;
-      } else if (!xmlStrcmp(text_node->next->name, (const xmlChar *)"a")) {
-        xmlNode *link_node = text_node->next;
+      }
+      // Handle if it starts with a link
+      else if (!xmlStrcmp(first_node->name, (const xmlChar *)"a")) {
+        string full_clue =
+            (string) (const char *)first_node->children->content +
+            (string) (const char *)first_node->next->content;
 
-        // TODO check the case where the link is at the start of the clue
+        cast_clue_ptr->m_clue = full_clue;
+        cast_clue_ptr->m_link = (char *)first_node->properties->children->content; // gets the text value of the href property
+      }
+      // Handle if it has a link in the middle
+      else if (!xmlStrcmp(first_node->next->name, (const xmlChar *)"a")) {
+        xmlNode *link_node = first_node->next;
 
         string full_clue =
-            (string) (const char *)text_node->content +
+            (string) (const char *)first_node->content +
             (string) (const char *)link_node->children->content;
 
-        // have to add this check in case the link is at the end of the clue
+        // have to add this check in case the link is at the end of the clue and there is no next
         if (link_node->next) {
-          full_clue += (string) (const char *) text_node->next->next->content;
+          full_clue += (string) (const char *) first_node->next->next->content;
         }
 
         cast_clue_ptr->m_clue = full_clue;
@@ -269,8 +279,12 @@ vector<Category> WebParser::parse_round(xmlNode *round_node, bool is_double_jeop
         value *= 2;
       }
       clue.m_value = value;
-      
-      categories[j].m_clues.push_back(clue);
+
+      // If the clue is blank, don't add it to the list
+      if (clue.m_clue.compare("")) {
+        categories[j].m_clues.push_back(clue);
+      }
+
       clue_node = clue_node->next->next;
     }
   }
@@ -307,6 +321,13 @@ Game WebParser::parse_game_page(htmlDocPtr doc) {
   xmlNode *double_jeopardy_node = find_node(root_element, is_double_jeopardy_node);
   vector<Category> double_jeopardy_categories = parse_round(double_jeopardy_node, true);
   game.m_double_jeopardy = double_jeopardy_categories;
+
+  for (vector<Category>::iterator it = game.m_double_jeopardy.begin(); it != game.m_double_jeopardy.end(); it++) {
+    std::printf("\nCategory: %s", it->m_title.c_str());
+    for (vector<Clue>::iterator jt = it->m_clues.begin(); jt != it->m_clues.end(); jt++) {
+      std::printf("\nClue: %s", jt->m_clue.c_str());
+    }
+  }
 
   xmlNode *final_jeopardy_node = find_node(root_element, is_final_jeopardy_node);
   Category final_jeopardy = parse_final_jeopardy(final_jeopardy_node);
