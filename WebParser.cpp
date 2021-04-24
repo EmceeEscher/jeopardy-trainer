@@ -125,6 +125,10 @@ bool WebParser::is_final_jeopardy_node(xmlNode *node) {
   return check_node(node, "div", "id", "final_jeopardy_round");
 }
 
+bool WebParser::is_title_node(xmlNode *node) {
+  return check_node(node, "div", "id", "game_title");
+}
+
 bool WebParser::is_tr_node(xmlNode *node) {
   return check_node(node, "tr", "", "");
 }
@@ -294,7 +298,12 @@ Game WebParser::parse_game_page(htmlDocPtr doc) {
 
   Game game;
 
-  //TODO: get air date
+  xmlNode *title_node = find_node(root_element, is_title_node);
+  // title hierarchy is div->h1->text
+  string full_title = (char *)title_node->children->children->content;
+  // just extract the date from string of form "Show #1234 - Monday, January 1, 1000"
+  game.m_air_date = full_title.substr(full_title.find("day, ") + 5);
+
   //TODO: add clue/category notes
 
   xmlNode *jeopardy_node = find_node(root_element, is_jeopardy_node);

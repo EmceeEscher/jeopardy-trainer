@@ -26,6 +26,7 @@ namespace web_parser {
     static bool is_jeopardy_node(xmlNode *node);
     static bool is_double_jeopardy_node(xmlNode *node);
     static bool is_final_jeopardy_node(xmlNode *node);
+    static bool is_title_node(xmlNode *node);
     static bool is_tr_node(xmlNode *node);
     static void parse_nodes(xmlNode *root_node, std::function<void (xmlNode *, void *)> parse_func, void *parse_struct);
     static void parse_clue_helper(xmlNode *node, void *clue_ptr);

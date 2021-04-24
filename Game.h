@@ -12,7 +12,7 @@ namespace game {
     std::vector<category::Category> m_single_jeopardy;
     std::vector<category::Category> m_double_jeopardy;
     category::Category m_final_jeopardy;
-    std::time_t m_air_date;
+    std::string m_air_date;
   };
 }
 
