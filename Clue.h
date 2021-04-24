@@ -12,6 +12,7 @@ namespace clue {
     int m_value = 0;
     bool m_is_daily_double = false;
     bool m_is_final_jeopardy = false;
+    std::string m_comments = "";
 
     // Returns whether you got the answer right
     bool test_answer(std::string attempt);

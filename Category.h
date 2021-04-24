@@ -30,6 +30,7 @@ namespace category {
     bool m_is_double_jeopardy = false;
     bool m_is_final_jeopardy = false;
     std::string m_comments;
+    std::string m_link;
   };
 }
 

@@ -30,6 +30,7 @@ namespace web_parser {
     static bool is_tr_node(xmlNode *node);
     static void parse_nodes(xmlNode *root_node, std::function<void (xmlNode *, void *)> parse_func, void *parse_struct);
     static void parse_clue_helper(xmlNode *node, void *clue_ptr);
+    static std::string parse_string_helper(std::string full_str, std::string start_substr, std::string end_substr);
     clue::Clue parse_clue(xmlNode *clue_node);
     static void parse_category_name_helper(xmlNode *node, void *category_ptr);
     category::Category initialize_category(xmlNode *category_node, bool is_double_jeopardy, bool is_final_jeopardy);

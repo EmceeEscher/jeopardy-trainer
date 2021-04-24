@@ -186,21 +186,41 @@ void WebParser::parse_clue_helper(xmlNode *node, void *clue_ptr) {
     xmlChar *onmouseover = xmlGetProp(node, (const xmlChar *)"onmouseover");
 
     string mouseover_str = (char *)onmouseover;
-    string start_substr = "<em class=\"correct_response\">";
-    int start_index = mouseover_str.find(start_substr);
-    if (start_index == -1) {
-      // if it wasn't found, then it's probably the final jeopardy node, which has a slightly different start substr
-      start_substr = "<em class=\\\"correct_response\\\">";
-      start_index = mouseover_str.find(start_substr);
+
+    // Find answer
+    bool is_final_jeopardy = false;
+    string answer_start_substr = "<em class=\"correct_response\">";
+    string answer_end_substr = "</em>";
+    string answer = parse_string_helper(mouseover_str, answer_start_substr, answer_end_substr);
+
+    if (answer == "") {
+      // if not found, it's probably is final jeopardy, which has a slightly different start substr
+      answer_start_substr = "<em class=\\\"correct_response\\\">";
+      answer = parse_string_helper(mouseover_str, answer_start_substr, answer_end_substr);
+      is_final_jeopardy = true;
     }
-    string end_substr = "</em>";
-    int start_loc = start_index + start_substr.size();
-    int end_loc = mouseover_str.find(end_substr);
-    string answer_str = mouseover_str.substr(start_loc, (end_loc - start_loc));
+
+    // Find comments (if there are any)
+    string comment_start_substr = "stuck', '(";
+    string comment_end_substr = is_final_jeopardy ? ")<table>" : "<br /><br /><em";
+    string comment = parse_string_helper(mouseover_str, comment_start_substr, comment_end_substr);
 
     xmlFree(onmouseover);
-    cast_clue_ptr->m_answer = answer_str;
+    cast_clue_ptr->m_answer = answer;
+    if (comment != "") {
+      cast_clue_ptr->m_comments = "(" + comment;
+    }
   }
+}
+
+string WebParser::parse_string_helper(std::string full_str, std::string start_substr, std::string end_substr) {
+  int start_index = full_str.find(start_substr);
+  if (start_index == -1) {
+    return "";
+  }
+  int start_loc = start_index + start_substr.size();
+  int end_loc = full_str.find(end_substr);
+  return full_str.substr(start_loc, (end_loc - start_loc));
 }
 
 Clue WebParser::parse_clue(xmlNode *clue_node) {
@@ -221,7 +241,15 @@ void WebParser::parse_category_name_helper(xmlNode *node, void *category_ptr) {
 
     if (!xmlStrcmp(html_class, (const xmlChar *) "category_name")) {
       xmlNode *text_node = node->children;
-      cast_category_ptr->m_title = (char *) text_node->content;
+      if (!xmlStrcmp(text_node->name, (const xmlChar *) "text")) {
+        cast_category_ptr->m_title = (char *) text_node->content;
+      } else if (!xmlStrcmp(text_node->name, (const xmlChar *) "a")) {
+        // Add the text of the link, which is in the child node, to the clue
+        cast_category_ptr->m_title = (char *) text_node->children->content;
+
+        // gets the text value of the href property, and adds it to the links
+        cast_category_ptr->m_link = (char *) text_node->properties->children->content;
+      }
     }
 
     if (!xmlStrcmp(html_class, (const xmlChar *) "category_comments")) {
