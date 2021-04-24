@@ -2,12 +2,13 @@
 #define JEOPARDY_TRAINER__CLUE_H_
 
 #include <string>
+#include <vector>
 
 namespace clue {
   struct Clue {
     std::string m_clue = "";
     std::string m_answer = "";
-    std::string m_link = "";
+    std::vector<std::string> m_links;
     int m_value = 0;
     bool m_is_daily_double = false;
     bool m_is_final_jeopardy = false;

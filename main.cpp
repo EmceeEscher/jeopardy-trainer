@@ -14,6 +14,6 @@ using namespace web_parser;
 int main() {
   WebParser parser = WebParser();
 
-  parser.retrieve_web_page("https://www.j-archive.com/showgame.php?game_id=6992");
+  parser.retrieve_web_page("https://www.j-archive.com/showgame.php?game_id=6699");
   return 0;
 }

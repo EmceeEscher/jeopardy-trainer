@@ -145,51 +145,33 @@ void WebParser::parse_clue_helper(xmlNode *node, void *clue_ptr) {
     xmlChar *html_class = xmlGetProp(node, (const xmlChar *)"class");
 
     if(!xmlStrcmp(html_class, (const xmlChar *)"clue_text")) {
-      xmlNode *first_node = node->children;
+      xmlNode *curr_node = node->children;
+      string clue_text = "";
+      vector<string> links;
 
-      // The libxml parser doesn't like links or double hyphens (for some reason), and splits up the text node
-      // So if those show up we need to do additional processing
-      // if first_node->next is null, that means no additional parsing necessary
-      if (!first_node->next) {
-        cast_clue_ptr->m_clue = (char *) first_node->content;
-      }
-      // If it has a next node and it's a span, that means it's the weird double hyphen behavior
-      // The best info I can find is https://gitlab.gnome.org/GNOME/libxml2/-/commit/3c0d62b4193c5c1fe15a143a138f76ffa1278779
-      // So manually recreate it and get the second half of the clue (in node->next->next)
-      else if (!xmlStrcmp(first_node->next->name, (const xmlChar *)"span")) {
-        // TODO: there's gotta be a better way of casting
-        string full_clue =
-            (string) (const char *)first_node->content + "--" +
-            (string) (const char *)first_node->next->next->content;
+      while(curr_node) {
+        if (!xmlStrcmp(curr_node->name, (const xmlChar *)"text")) {
+          clue_text += (char *) curr_node->content;
+        }
+        // The libxml parser doesn't like double hyphens (for some reason), and splits up the text node
+        // The double hyphen is put into a span node, so if we see that, just manually add the double hyphen back and move on
+        else if (!xmlStrcmp(curr_node->name, (const xmlChar *)"span")) {
+          clue_text += "--";
+        } else if (!xmlStrcmp(curr_node->name, (const xmlChar *)"a")) {
+          // Add the text of the link, which is in the child node, to the clue
+          clue_text += (char *) curr_node->children->content;
 
-        cast_clue_ptr->m_clue = full_clue;
-      }
-      // Handle if it starts with a link
-      else if (!xmlStrcmp(first_node->name, (const xmlChar *)"a")) {
-        string full_clue =
-            (string) (const char *)first_node->children->content +
-            (string) (const char *)first_node->next->content;
-
-        cast_clue_ptr->m_clue = full_clue;
-        cast_clue_ptr->m_link = (char *)first_node->properties->children->content; // gets the text value of the href property
-      }
-      // Handle if it has a link in the middle
-      else if (!xmlStrcmp(first_node->next->name, (const xmlChar *)"a")) {
-        xmlNode *link_node = first_node->next;
-
-        string full_clue =
-            (string) (const char *)first_node->content +
-            (string) (const char *)link_node->children->content;
-
-        // have to add this check in case the link is at the end of the clue and there is no next
-        if (link_node->next) {
-          full_clue += (string) (const char *) first_node->next->next->content;
+          // gets the text value of the href property, and adds it to the links
+          links.push_back((char *)curr_node->properties->children->content);
         }
 
-        cast_clue_ptr->m_clue = full_clue;
-        cast_clue_ptr->m_link = (char *)link_node->properties->children->content; // gets the text value of the href property
+        curr_node = curr_node->next;
       }
 
+      cast_clue_ptr->m_clue = clue_text;
+      if (!links.empty()) {
+        cast_clue_ptr->m_links = links;
+      }
     } else if (!xmlStrcmp(html_class, (const xmlChar *)"clue_value_daily_double")) {
       // If it has this class, then it's a daily double, but I don't care how much the contestant bet
       cast_clue_ptr->m_is_daily_double = true;
