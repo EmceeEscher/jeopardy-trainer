@@ -224,6 +224,13 @@ void WebParser::parse_category_name_helper(xmlNode *node, void *category_ptr) {
       cast_category_ptr->m_title = (char *) text_node->content;
     }
 
+    if (!xmlStrcmp(html_class, (const xmlChar *) "category_comments")) {
+      xmlNode *text_node = node->children;
+      if (text_node) {
+        cast_category_ptr->m_comments = (char *) text_node->content;
+      }
+    }
+
     xmlFree(html_class);
   }
 }

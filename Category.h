@@ -29,6 +29,7 @@ namespace category {
     std::vector<clue::Clue> m_clues;
     bool m_is_double_jeopardy = false;
     bool m_is_final_jeopardy = false;
+    std::string m_comments;
   };
 }
 
