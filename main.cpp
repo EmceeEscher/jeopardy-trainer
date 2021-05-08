@@ -5,29 +5,15 @@
 
 #include "Clue.h"
 #include "Category.h"
+#include "WebParser.h"
 
 using namespace clue;
 using namespace category;
+using namespace web_parser;
 
 int main() {
-  Clue test_clue("what this object is", "clue", 200, false, false);
+  WebParser parser = WebParser();
 
-  std::vector<Clue> all_test_clues;
-  all_test_clues.push_back(test_clue);
-  Category test_category("random facts", all_test_clues, false, false);
-
-  std::cout << test_category.get_title() << std::endl;
-  std::cout << test_category.get_clues().at(0).get_clue() << std::endl;
-
-  CURL* curl_handle = curl_easy_init();
-
-  if(curl_handle) {
-    curl_easy_setopt(curl_handle, CURLOPT_URL, "https://www.j-archive.com/showgame.php?game_id=6699");
-    CURLcode res = curl_easy_perform(curl_handle);
-
-    std::cout << res << std::endl;
-
-    curl_easy_cleanup(curl_handle);
-  }
+  parser.retrieve_web_page("https://www.j-archive.com/showgame.php?game_id=6989");
   return 0;
 }

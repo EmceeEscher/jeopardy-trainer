@@ -23,34 +23,14 @@ namespace category {
     unknown
   };
 
-  class Category {
-   private:
+  struct Category {
     std::string m_title;
-    Type m_type;
+    Type m_type = unknown;
     std::vector<clue::Clue> m_clues;
-    bool m_is_double_jeopardy;
-    bool m_is_final_jeopardy;
-
-   public:
-    // Constructor
-    Category(
-        std::string title,
-        std::vector<clue::Clue> &clues,
-        bool is_double_jeopardy,
-        bool is_final_jeopardy,
-        Type type=unknown);
-
-    // Getters / setters
-    std::string get_title() { return m_title; };
-
-    Type get_type() { return m_type; };
-    void set_type(Type type) { m_type = type; };
-
-    // TODO: I had this as const but then it made problems? Not sure what is correct
-    std::vector<clue::Clue> &get_clues() { return m_clues; };
-
-    bool get_is_double_jeopardy() { return m_is_double_jeopardy; };
-    bool get_is_final_jeopardy() { return m_is_final_jeopardy; };
+    bool m_is_double_jeopardy = false;
+    bool m_is_final_jeopardy = false;
+    std::string m_comments;
+    std::string m_link;
   };
 }
 

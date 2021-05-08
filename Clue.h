@@ -2,25 +2,20 @@
 #define JEOPARDY_TRAINER__CLUE_H_
 
 #include <string>
+#include <vector>
 
 namespace clue {
-  class Clue {
-   private:
-    std::string m_clue;
-    std::string m_answer;
-    int m_value;
-    bool m_is_daily_double;
-    bool m_is_final_jeopardy;
+  struct Clue {
+    std::string m_clue = "";
+    std::string m_answer = "";
+    std::vector<std::string> m_links;
+    int m_value = 0;
+    bool m_is_daily_double = false;
+    bool m_is_final_jeopardy = false;
+    std::string m_comments = "";
 
-   public:
-    Clue(std::string clue, std::string answer, int value, bool is_daily_double, bool is_final_jeopardy);
-
+    // Returns whether you got the answer right
     bool test_answer(std::string attempt);
-
-    std::string get_clue() { return m_clue; };
-    int get_value() { return m_value; };
-    bool get_is_daily_double() { return m_is_daily_double; };
-    bool get_is_final_jeopardy() { return m_is_final_jeopardy; };
   };
 }
 
