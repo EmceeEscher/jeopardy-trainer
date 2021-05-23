@@ -339,8 +339,6 @@ Game WebParser::parse_game_page(htmlDocPtr doc) {
   // just extract the date from string of form "Show #1234 - Monday, January 1, 1000"
   game.m_air_date = full_title.substr(full_title.find("day, ") + 5);
 
-  //TODO: add clue/category notes
-
   xmlNode *jeopardy_node = find_node(root_element, is_jeopardy_node);
   vector<Category> single_jeopardy_categories = parse_round(jeopardy_node, false);
   game.m_single_jeopardy = single_jeopardy_categories;
