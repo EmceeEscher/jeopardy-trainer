@@ -18,8 +18,11 @@ int main() {
 
   WebParser parser = WebParser();
 
+  //TODO: refactor web parser to return the game somehow and write the actual clues
   parser.retrieve_web_page("https://www.j-archive.com/showgame.php?game_id=6989");
 
+  Clue fake_clue;
+  db_handler.writeClue(fake_clue);
   db_handler.closeDbConn();
   return 0;
 }
