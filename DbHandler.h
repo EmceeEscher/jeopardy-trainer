@@ -9,6 +9,8 @@ class DbHandler {
  private:
   sqlite3 *m_conn;
 
+  std::string boolToString(bool b);
+
  public:
   bool setupDbConn();
   void closeDbConn();
