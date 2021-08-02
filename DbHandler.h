@@ -10,6 +10,8 @@ class DbHandler {
   sqlite3 *m_conn;
 
   std::string boolToString(bool b);
+  std::string escapeApostrophe(std::string original);
+  std::string replaceAll(std::string str, const std::string& from, const std::string& to);
 
  public:
   bool setupDbConn();

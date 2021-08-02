@@ -6,8 +6,8 @@ CREATE TABLE clues
     value INTEGER NOT NULL,
     is_daily_double BOOLEAN NOT NULL,
     is_final_jeopardy BOOLEAN NOT NULL,
-    links BLOB,
-    comments BLOB,
+    links TEXT,
+    comments TEXT
 );
 
 CREATE TABLE categories
@@ -17,8 +17,8 @@ CREATE TABLE categories
     type TEXT,
     is_double_jeopardy BOOLEAN NOT NULL,
     is_final_jeopardy BOOLEAN NOT NULL,
-    links BLOB,
-    comments BLOB
+    links TEXT,
+    comments TEXT
 );
 
 CREATE TABLE clue_categories

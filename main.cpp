@@ -23,7 +23,7 @@ int main() {
   Game game;
   parser.retrieve_web_page("https://www.j-archive.com/showgame.php?game_id=6989", &game);
 
-  Clue fake_clue = game.m_double_jeopardy[5].m_clues[0];
+  Clue fake_clue = game.m_double_jeopardy[2].m_clues[2];
   db_handler.writeClue(fake_clue);
   db_handler.closeDbConn();
   return 0;

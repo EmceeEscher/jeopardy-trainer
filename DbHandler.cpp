@@ -1,6 +1,7 @@
 #include "DbHandler.h"
 
 #include <string>
+#include <algorithm>
 
 using clue::Clue;
 using std::string;
@@ -34,10 +35,11 @@ bool DbHandler::writeClue(Clue clue) {
   }
 
   insert_cmd_str += ") VALUES('"
-      + clue.m_clue + "', '" + clue.m_answer + "', " + std::to_string(clue.m_value) + ", "
-      + boolToString(clue.m_is_daily_double) + ", " + boolToString(clue.m_is_final_jeopardy);
+      + escapeApostrophe(clue.m_clue) + "', '" + escapeApostrophe(clue.m_answer) + "', "
+      + std::to_string(clue.m_value) + ", " + boolToString(clue.m_is_daily_double) + ", "
+      + boolToString(clue.m_is_final_jeopardy);
   if (!clue.m_comments.empty()) {
-    insert_cmd_str += ", '" + clue.m_comments + "'";
+    insert_cmd_str += ", '" + escapeApostrophe(clue.m_comments) + "'";
   }
   if (!clue.m_links.empty()) {
     string link_str;
@@ -50,13 +52,30 @@ bool DbHandler::writeClue(Clue clue) {
   sqlite3_stmt *stmt;
   const char *tail;
 
-  // Hopefully 800 will be high enough for nByte, might need to up for large clues
-  sqlite3_prepare_v2(m_conn, insert_cmd_str.c_str(), 800, &stmt, &tail);
-  //TODO: check for errors in result
+  int prep_result = sqlite3_prepare_v2(m_conn, insert_cmd_str.c_str(), -1, &stmt, &tail);
+  if (prep_result != SQLITE_OK) {
+    return false;
+  }
+  // TODO: return id so I can associate it with the category?
   sqlite3_step(stmt);
   return true;
 }
 
 string DbHandler::boolToString(bool b) {
   return b ? "true" : "false";
+}
+
+string DbHandler::escapeApostrophe(std::string original) {
+  string new_str = replaceAll(original, string("'"), string("''"));
+  return new_str;
+}
+
+// from https://stackoverflow.com/questions/2896600/how-to-replace-all-occurrences-of-a-character-in-string
+string DbHandler::replaceAll(std::string str, const std::string &from, const std::string &to) {
+  size_t start_pos = 0;
+  while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+    str.replace(start_pos, from.length(), to);
+    start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+  }
+  return str;
 }
