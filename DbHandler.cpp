@@ -23,10 +23,30 @@ void DbHandler::closeDbConn() {
 }
 
 //TODO: clean up test clues in the db
+// TODO: set up schema for categories/games, may need to update schema for associations too
 bool DbHandler::writeClue(Clue clue) {
-  string insert_cmd_str = string("INSERT INTO clues (clue, answer, value, is_daily_double, is_final_jeopardy) VALUES('")
+  string insert_cmd_str = string("INSERT INTO clues (clue, answer, value, is_daily_double, is_final_jeopardy");
+  if (!clue.m_comments.empty()) {
+    insert_cmd_str += ", comments";
+  }
+  if (!clue.m_links.empty()) {
+    insert_cmd_str += ", links";
+  }
+
+  insert_cmd_str += ") VALUES('"
       + clue.m_clue + "', '" + clue.m_answer + "', " + std::to_string(clue.m_value) + ", "
-      + boolToString(clue.m_is_daily_double) + ", " + boolToString(clue.m_is_final_jeopardy) + ")";
+      + boolToString(clue.m_is_daily_double) + ", " + boolToString(clue.m_is_final_jeopardy);
+  if (!clue.m_comments.empty()) {
+    insert_cmd_str += ", '" + clue.m_comments + "'";
+  }
+  if (!clue.m_links.empty()) {
+    string link_str;
+    for (string &piece : clue.m_links) { link_str += piece; }
+    insert_cmd_str += ", '" + link_str + "'";
+  }
+
+  insert_cmd_str += ")";
+
   sqlite3_stmt *stmt;
   const char *tail;
 
