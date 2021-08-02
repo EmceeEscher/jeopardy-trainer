@@ -30,8 +30,8 @@ bool DbHandler::writeClue(Clue clue) {
   sqlite3_stmt *stmt;
   const char *tail;
 
-  //TODO: figure out a good nByte value
-  sqlite3_prepare_v2(m_conn, insert_cmd_str.c_str(), 400/*??*/, &stmt, &tail);
+  // Hopefully 800 will be high enough for nByte, might need to up for large clues
+  sqlite3_prepare_v2(m_conn, insert_cmd_str.c_str(), 800, &stmt, &tail);
   //TODO: check for errors in result
   sqlite3_step(stmt);
   return true;
