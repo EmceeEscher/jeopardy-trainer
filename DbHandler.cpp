@@ -24,11 +24,9 @@ void DbHandler::closeDbConn() {
 
 //TODO: clean up test clues in the db
 bool DbHandler::writeClue(Clue clue) {
-  //TODO write this so it actually uses the clue
-  char *insert_cmd = "INSERT INTO clues (clue, answer, value, is_daily_double, is_final_jeopardy) VALUES('test clue', 'test answer', 200, true, false)";
   string insert_cmd_str = string("INSERT INTO clues (clue, answer, value, is_daily_double, is_final_jeopardy) VALUES('")
-      + clue.m_clue + "', '" + clue.m_answer + "', '" + std::to_string(clue.m_value) + "', '"
-      + boolToString(clue.m_is_daily_double) + "', '" + boolToString(clue.m_is_final_jeopardy) + ")";
+      + clue.m_clue + "', '" + clue.m_answer + "', " + std::to_string(clue.m_value) + ", "
+      + boolToString(clue.m_is_daily_double) + ", " + boolToString(clue.m_is_final_jeopardy) + ")";
   sqlite3_stmt *stmt;
   const char *tail;
 

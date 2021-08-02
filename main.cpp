@@ -5,12 +5,14 @@
 
 #include "Clue.h"
 #include "Category.h"
+#include "Game.h"
 #include "WebParser.h"
 #include "DbHandler.h"
 
 using namespace clue;
 using namespace category;
 using namespace web_parser;
+using namespace game;
 
 int main() {
   DbHandler db_handler = DbHandler();
@@ -18,10 +20,10 @@ int main() {
 
   WebParser parser = WebParser();
 
-  //TODO: refactor web parser to return the game somehow and write the actual clues
-  parser.retrieve_web_page("https://www.j-archive.com/showgame.php?game_id=6989");
+  Game game;
+  parser.retrieve_web_page("https://www.j-archive.com/showgame.php?game_id=6989", &game);
 
-  Clue fake_clue;
+  Clue fake_clue = game.m_single_jeopardy[0].m_clues[0];
   db_handler.writeClue(fake_clue);
   db_handler.closeDbConn();
   return 0;

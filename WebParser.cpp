@@ -32,7 +32,7 @@ size_t WebParser::write_memory_callback(void *contents, size_t size, size_t nmem
   return realsize;
 }
 
-CURLcode WebParser::retrieve_web_page(const char *url) {
+CURLcode WebParser::retrieve_web_page(const char *url, Game *game_ptr) {
 
   CURL *curl_handle = curl_easy_init();
 
@@ -48,13 +48,11 @@ CURLcode WebParser::retrieve_web_page(const char *url) {
 
     CURLcode res = curl_easy_perform(curl_handle);
 
-    // TODO figure out how to divide this. (like how should the functions be divvied up?)
-
     if (res == CURLE_OK) { // web page is read and stored in page_mem_chunk.memory
       // Option 32 is HTML_PARSE_NOERROR; used to ignore errors from unescaped & symbols
       htmlDocPtr doc = htmlReadMemory(page_mem_chunk.memory, page_mem_chunk.size, url, NULL, 32);
 
-      Game game = parse_game_page(doc);
+      parse_game_page(doc, game_ptr);
 
       xmlFreeDoc(doc);
       xmlCleanupParser();
@@ -68,7 +66,6 @@ CURLcode WebParser::retrieve_web_page(const char *url) {
   }
 }
 
-// TODO figure out how to return multiple things
 xmlNode *WebParser::find_node(xmlNode *root_node, std::function<bool(xmlNode *)> search_func) {
   if (!root_node) {
     return root_node;
@@ -194,7 +191,7 @@ void WebParser::parse_clue_helper(xmlNode *node, void *clue_ptr) {
     string answer = parse_string_helper(mouseover_str, answer_start_substr, answer_end_substr);
 
     if (answer == "") {
-      // if not found, it's probably is final jeopardy, which has a slightly different start substr
+      // if not found, it's probably final jeopardy, which has a slightly different start substr
       answer_start_substr = "<em class=\\\"correct_response\\\">";
       answer = parse_string_helper(mouseover_str, answer_start_substr, answer_end_substr);
       is_final_jeopardy = true;
@@ -328,28 +325,24 @@ Category WebParser::parse_final_jeopardy(xmlNode *round_node) {
   return category;
 }
 
-Game WebParser::parse_game_page(htmlDocPtr doc) {
+void WebParser::parse_game_page(htmlDocPtr doc, Game *game_ptr) {
   xmlNode *root_element = xmlDocGetRootElement(doc);
-
-  Game game;
 
   xmlNode *title_node = find_node(root_element, is_title_node);
   // title hierarchy is div->h1->text
   string full_title = (char *)title_node->children->children->content;
   // just extract the date from string of form "Show #1234 - Monday, January 1, 1000"
-  game.m_air_date = full_title.substr(full_title.find("day, ") + 5);
+  game_ptr->m_air_date = full_title.substr(full_title.find("day, ") + 5);
 
   xmlNode *jeopardy_node = find_node(root_element, is_jeopardy_node);
   vector<Category> single_jeopardy_categories = parse_round(jeopardy_node, false);
-  game.m_single_jeopardy = single_jeopardy_categories;
+  game_ptr->m_single_jeopardy = single_jeopardy_categories;
 
   xmlNode *double_jeopardy_node = find_node(root_element, is_double_jeopardy_node);
   vector<Category> double_jeopardy_categories = parse_round(double_jeopardy_node, true);
-  game.m_double_jeopardy = double_jeopardy_categories;
+  game_ptr->m_double_jeopardy = double_jeopardy_categories;
 
   xmlNode *final_jeopardy_node = find_node(root_element, is_final_jeopardy_node);
   Category final_jeopardy = parse_final_jeopardy(final_jeopardy_node);
-  game.m_final_jeopardy = final_jeopardy;
-
-  return game;
+  game_ptr->m_final_jeopardy = final_jeopardy;
 }
