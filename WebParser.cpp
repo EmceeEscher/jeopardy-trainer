@@ -237,6 +237,8 @@ void WebParser::parse_category_name_helper(xmlNode *node, void *category_ptr) {
     xmlChar *html_class = xmlGetProp(node, (const xmlChar *) "class");
 
     if (!xmlStrcmp(html_class, (const xmlChar *) "category_name")) {
+      // TODO: figure out the category here? based on the title?
+
       xmlNode *text_node = node->children;
       if (!xmlStrcmp(text_node->name, (const xmlChar *) "text")) {
         cast_category_ptr->m_title = (char *) text_node->content;

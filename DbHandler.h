@@ -4,19 +4,24 @@
 #include <sqlite3.h>
 
 #include "Clue.h"
+#include "Category.h"
+#include "Game.h"
 
 class DbHandler {
  private:
   sqlite3 *m_conn;
 
-  std::string boolToString(bool b);
-  std::string escapeApostrophe(std::string original);
-  std::string replaceAll(std::string str, const std::string& from, const std::string& to);
+  std::string bool_to_string(bool b);
+  std::string escape_apostrophe(std::string original);
+  std::string replace_all(std::string str, const std::string& from, const std::string& to);
 
  public:
-  bool setupDbConn();
-  void closeDbConn();
-  bool writeClue(clue::Clue clue);
+  bool setup_db_conn();
+  void close_db_conn();
+  int write_clue(clue::Clue clue);
+  int write_category(category::Category category);
+  bool write_clue_category(int category_id, int clue_id);
+  bool write_full_game(game::Game game);
 };
 
 #endif //JEOPARDY_TRAINER__DBHANDLER_H_

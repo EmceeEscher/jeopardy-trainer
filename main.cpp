@@ -16,15 +16,14 @@ using namespace game;
 
 int main() {
   DbHandler db_handler = DbHandler();
-  db_handler.setupDbConn();
+  db_handler.setup_db_conn();
 
   WebParser parser = WebParser();
 
   Game game;
   parser.retrieve_web_page("https://www.j-archive.com/showgame.php?game_id=6989", &game);
 
-  Clue fake_clue = game.m_double_jeopardy[2].m_clues[2];
-  db_handler.writeClue(fake_clue);
-  db_handler.closeDbConn();
+  db_handler.write_full_game(game);
+  db_handler.close_db_conn();
   return 0;
 }
