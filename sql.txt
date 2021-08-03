@@ -21,11 +21,26 @@ CREATE TABLE categories
     comments TEXT
 );
 
-CREATE TABLE clue_categories
+CREATE TABLE category_clues
 (
-    clue_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
-    PRIMARY KEY (clue_id, category_id),
-    FOREIGN KEY (clue_id) REFERENCES clues (id),
+    clue_id INTEGER NOT NULL,
+    PRIMARY KEY (category_id, clue_id),
+    FOREIGN KEY (category_id) REFERENCES categories (id),
+    FOREIGN KEY (clue_id) REFERENCES clues (id)
+);
+
+CREATE TABLE games
+(
+    id INTEGER PRIMARY KEY,
+    air_date TEXT NOT NULL
+);
+
+CREATE TABLE game_categories
+(
+    game_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    PRIMARY KEY (game_id, category_id),
+    FOREIGN KEY (game_id) REFERENCES games (id),
     FOREIGN KEY (category_id) REFERENCES categories (id)
 );
