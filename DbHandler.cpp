@@ -1,6 +1,7 @@
 #include "DbHandler.h"
 
 #include <string>
+#include <iostream>
 #include <algorithm>
 
 using clue::Clue;
@@ -25,8 +26,7 @@ void DbHandler::close_db_conn() {
   }
 }
 
-//TODO: clean up test clues in the db
-// TODO: set up schema for categories/games, may need to update schema for associations too
+// TODO: clean up test clues in the db
 int DbHandler::write_clue(Clue clue) {
   string insert_cmd_str = string("INSERT INTO clues (clue, answer, value, is_daily_double, is_final_jeopardy");
   if (!clue.m_comments.empty()) {
@@ -103,9 +103,46 @@ int DbHandler::write_category(Category category) {
   return sqlite3_last_insert_rowid(m_conn);
 }
 
-bool DbHandler::write_clue_category(int category_id, int clue_id) {
-  string insert_cmd_str = string("INSERT INTO clue_categories (clue_id, category_id) VALUES(")
-      + std::to_string(clue_id) + ", " + std::to_string(category_id) + ")";
+bool DbHandler::write_category_clue(int category_id, int clue_id) {
+  string insert_cmd_str = string("INSERT INTO category_clues (category_id, clue_id) VALUES(")
+      + std::to_string(category_id) + ", " + std::to_string(clue_id) + ")";
+
+  sqlite3_stmt *stmt;
+  const char *tail;
+
+  int prep_result = sqlite3_prepare_v2(m_conn, insert_cmd_str.c_str(), -1, &stmt, &tail);
+  if (prep_result != SQLITE_OK) {
+    sqlite3_finalize(stmt);
+    return false;
+  }
+
+  sqlite3_step(stmt);
+  sqlite3_finalize(stmt);
+
+  return true;
+}
+
+int DbHandler::write_game(Game game) {
+  string insert_cmd_str = string("INSERT INTO games (air_date) VALUES('") + game.m_air_date + "')";
+
+  sqlite3_stmt *stmt;
+  const char *tail;
+
+  int prep_result = sqlite3_prepare_v2(m_conn, insert_cmd_str.c_str(), -1, &stmt, &tail);
+  if (prep_result != SQLITE_OK) {
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  sqlite3_step(stmt);
+  sqlite3_finalize(stmt);
+
+  return sqlite3_last_insert_rowid(m_conn);
+}
+
+bool DbHandler::write_game_category(int game_id, int category_id) {
+  string insert_cmd_str = string("INSERT INTO game_categories (game_id, category_id) VALUES(")
+      + std::to_string(game_id) + ", " + std::to_string(category_id) + ")";
 
   sqlite3_stmt *stmt;
   const char *tail;
@@ -123,12 +160,52 @@ bool DbHandler::write_clue_category(int category_id, int clue_id) {
 }
 
 bool DbHandler::write_full_game(game::Game game) {
-  Category test_category = game.m_single_jeopardy[0];
+  int game_id = write_game(game);
 
-  int category_id = write_category(test_category);
-  for (Clue clue : test_category.m_clues) {
-    int clue_id = write_clue(clue);
-    write_clue_category(category_id, clue_id);
+  if (game_id == -1) {
+    std::cout << "Failed to write game from date: " << game.m_air_date << std::endl;
+    return false;
+  }
+
+  bool wrote_single_jeopardy = write_all_categories_in_board(game_id, game.m_air_date, game.m_single_jeopardy);
+
+  bool wrote_double_jeopardy = write_all_categories_in_board(game_id, game.m_air_date, game.m_double_jeopardy);
+
+  std::vector<Category> final_jeopardy_vect{ game.m_final_jeopardy };
+  bool wrote_final_jeopardy = write_all_categories_in_board(game_id, game.m_air_date, final_jeopardy_vect);
+
+  return wrote_single_jeopardy && wrote_double_jeopardy && wrote_final_jeopardy;
+}
+
+bool DbHandler::write_all_categories_in_board(int game_id, std::string air_date, std::vector<category::Category> categories) {
+  for (Category category : categories) {
+    int category_id = write_category(category);
+    if (category_id == -1) {
+      std::cout << "Failed to write category: " << category.m_title << " from date: " << air_date << std::endl;
+      return false;
+    }
+
+    bool wrote_game_category = write_game_category(game_id, category_id);
+    if (!wrote_game_category) {
+      std::cout << "Failed to write game-category for category: " << category.m_title << " from date: "
+                << air_date << std::endl;
+      return false;
+    }
+
+    for (Clue clue : category.m_clues) {
+      int clue_id = write_clue(clue);
+      if (clue_id == -1) {
+        std::cout << "Failed to write clue: " << clue.m_clue << " from date: " << air_date << std::endl;
+        return false;
+      }
+
+      bool wrote_category_clue = write_category_clue(category_id, clue_id);
+      if (!wrote_category_clue) {
+        std::cout << "Failed to write category-clue for clue: " << clue.m_clue << " from date: " << air_date
+                  << std::endl;
+        return false;
+      }
+    }
   }
 
   return true;

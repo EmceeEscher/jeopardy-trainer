@@ -20,7 +20,10 @@ class DbHandler {
   void close_db_conn();
   int write_clue(clue::Clue clue);
   int write_category(category::Category category);
-  bool write_clue_category(int category_id, int clue_id);
+  int write_game(game::Game game);
+  bool write_category_clue(int category_id, int clue_id);
+  bool write_game_category(int game_id, int category_id);
+  bool write_all_categories_in_board(int game_id, std::string air_date, std::vector<category::Category> categories);
   bool write_full_game(game::Game game);
 };
 
