@@ -39,8 +39,8 @@ namespace web_parser {
 
    public:
     WebParser() = default;
-    CURLcode retrieve_web_page(const char *url);
-    game::Game parse_game_page(htmlDocPtr doc);
+    CURLcode retrieve_web_page(const char *url, game::Game *game_ptr);
+    void parse_game_page(htmlDocPtr doc, game::Game *game_ptr);
   };
 }
 

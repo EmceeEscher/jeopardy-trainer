@@ -1,0 +1,46 @@
+CREATE TABLE clues
+(
+    id INTEGER PRIMARY KEY,
+    clue TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    value INTEGER NOT NULL,
+    is_daily_double BOOLEAN NOT NULL,
+    is_final_jeopardy BOOLEAN NOT NULL,
+    links TEXT,
+    comments TEXT
+);
+
+CREATE TABLE categories
+(
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    type TEXT,
+    is_double_jeopardy BOOLEAN NOT NULL,
+    is_final_jeopardy BOOLEAN NOT NULL,
+    links TEXT,
+    comments TEXT
+);
+
+CREATE TABLE category_clues
+(
+    category_id INTEGER NOT NULL,
+    clue_id INTEGER NOT NULL,
+    PRIMARY KEY (category_id, clue_id),
+    FOREIGN KEY (category_id) REFERENCES categories (id),
+    FOREIGN KEY (clue_id) REFERENCES clues (id)
+);
+
+CREATE TABLE games
+(
+    id INTEGER PRIMARY KEY,
+    air_date TEXT NOT NULL
+);
+
+CREATE TABLE game_categories
+(
+    game_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    PRIMARY KEY (game_id, category_id),
+    FOREIGN KEY (game_id) REFERENCES games (id),
+    FOREIGN KEY (category_id) REFERENCES categories (id)
+);
