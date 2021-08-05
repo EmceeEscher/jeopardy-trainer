@@ -26,6 +26,7 @@ int main() {
   // run 1: 173
   // run 2: 174-200, failed with segfault after completing 191
   // run 3: 192, fails with segfault! (so not a memory leak??)
+  // got 192 working, but noticed it wasn't separating links, so fixed that and started over
   for (int i = 192; i <= 192; i++) {
     string url = string("https://www.j-archive.com/showgame.php?game_id=") + std::to_string(i);
 
