@@ -27,7 +27,10 @@ int main() {
   // run 2: 174-200, failed with segfault after completing 191
   // run 3: 192, fails with segfault! (so not a memory leak??)
   // got 192 working, but noticed it wasn't separating links, so fixed that and started over
-  for (int i = 192; i <= 192; i++) {
+  // run 4: 173-200, success
+  // run 5: 201-1000, broke on 233 (guess is due to underline in category name)
+  // run 6: fixed 233, time to continue
+  for (int i = 233; i <= 233; i++) {
     string url = string("https://www.j-archive.com/showgame.php?game_id=") + std::to_string(i);
 
   CURLcode parsed_page_code = parser.retrieve_web_page(url.c_str(), &game);

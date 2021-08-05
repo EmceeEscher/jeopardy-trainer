@@ -249,8 +249,23 @@ void WebParser::parse_category_name_helper(xmlNode *node, void *category_ptr) {
       if (!xmlStrcmp(text_node->name, (const xmlChar *) "text")) {
         cast_category_ptr->m_title = (char *) text_node->content;
       } else if (!xmlStrcmp(text_node->name, (const xmlChar *) "a")) {
-        // Add the text of the link, which is in the child node, to the clue
-        cast_category_ptr->m_title = (char *) text_node->children->content;
+
+        // Normally, the text of the link is in the child node, but occasionally it can be split up due to extra
+        // formatting nodes
+        xmlNode *title_node = text_node->children;
+        string title_builder = "";
+
+        while (title_node) {
+          if (!xmlStrcmp(title_node->name, (const xmlChar *) "text")) {
+            title_builder += (char *) title_node->content;
+          } else {
+            title_builder += (char *) title_node->children->content;
+          }
+
+          title_node = title_node->next;
+        }
+
+        cast_category_ptr->m_title = title_builder;
 
         // gets the text value of the href property, and adds it to the links
         cast_category_ptr->m_link = (char *) text_node->properties->children->content;

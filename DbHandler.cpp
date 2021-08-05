@@ -44,7 +44,7 @@ int DbHandler::write_clue(Clue clue) {
   }
   if (!clue.m_links.empty()) {
     string link_str;
-    for (string &piece : clue.m_links) { link_str += piece + ", "; }
+    for (string &piece : clue.m_links) { link_str += piece + " "; }
     insert_cmd_str += ", '" + link_str + "'";
   }
 
