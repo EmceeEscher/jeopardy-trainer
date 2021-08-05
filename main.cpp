@@ -23,18 +23,21 @@ int main() {
   WebParser parser = WebParser();
 
   Game game;
-  for (int i = 173; i <= 7100; i++) {
+  // run 1: 173
+  // run 2: 174-200, failed with segfault after completing 191
+  // run 3: 192, fails with segfault! (so not a memory leak??)
+  for (int i = 192; i <= 192; i++) {
     string url = string("https://www.j-archive.com/showgame.php?game_id=") + std::to_string(i);
 
-    bool parsed_page = parser.retrieve_web_page(url.c_str(), &game);
-    if (parsed_page) {
+  CURLcode parsed_page_code = parser.retrieve_web_page(url.c_str(), &game);
+    if (parsed_page_code == CURLE_OK) {
       bool wrote_game = db_handler.write_full_game(game);
       if (!wrote_game) {
         std::cout << "failed to write to db for game " << i << std::endl;
         break;
       }
     } else {
-      std::cout << "couldn't parse id " << i << std::endl;
+      std::cout << "couldn't get page for id " << i << std::endl;
     }
   }
 

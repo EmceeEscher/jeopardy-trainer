@@ -159,8 +159,14 @@ void WebParser::parse_clue_helper(xmlNode *node, void *clue_ptr) {
         else if (!xmlStrcmp(curr_node->name, (const xmlChar *)"span")) {
           clue_text += "--";
         } else if (!xmlStrcmp(curr_node->name, (const xmlChar *)"a")) {
+          // Find the node with text (usually child node, but sometimes deeper)
+          xmlNode *text_node = curr_node->children;
+          while (xmlStrcmp(text_node->name, (const xmlChar *)"text")) {
+            text_node = text_node->children;
+          }
+
           // Add the text of the link, which is in the child node, to the clue
-          clue_text += (char *) curr_node->children->content;
+          clue_text += (char *) text_node->content;
 
           // gets the text value of the href property, and adds it to the links
           links.push_back((char *)curr_node->properties->children->content);
@@ -237,7 +243,7 @@ void WebParser::parse_category_name_helper(xmlNode *node, void *category_ptr) {
     xmlChar *html_class = xmlGetProp(node, (const xmlChar *) "class");
 
     if (!xmlStrcmp(html_class, (const xmlChar *) "category_name")) {
-      // TODO: figure out the category here? based on the title?
+      // TODO: figure out the category type here? based on the title?
 
       xmlNode *text_node = node->children;
       if (!xmlStrcmp(text_node->name, (const xmlChar *) "text")) {
