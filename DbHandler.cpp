@@ -26,7 +26,6 @@ void DbHandler::close_db_conn() {
   }
 }
 
-// TODO: clean up test clues in the db
 int DbHandler::write_clue(Clue clue) {
   string insert_cmd_str = string("INSERT INTO clues (clue, answer, value, is_daily_double, is_final_jeopardy");
   if (!clue.m_comments.empty()) {
@@ -82,7 +81,7 @@ int DbHandler::write_category(Category category) {
   if (!category.m_comments.empty()) {
     insert_cmd_str += ", '" + escape_apostrophe(category.m_comments) + "'";
   }
-  if (!category.m_comments.empty()) {
+  if (!category.m_link.empty()) {
     insert_cmd_str += ", '" + escape_apostrophe(category.m_link) + "'";
   }
 
