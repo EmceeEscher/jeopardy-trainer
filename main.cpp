@@ -30,7 +30,12 @@ int main() {
   // run 4: 173-200, success
   // run 5: 201-1000, broke on 233 (guess is due to underline in category name)
   // run 6: fixed 233, time to continue
-  for (int i = 233; i <= 233; i++) {
+  // run 7: 234-300
+  // run 8: 301-500
+  // run 9: 501-1000, I think broke on 940?
+  // run 10: fixed 940
+  // run 11: 941-1000, success
+  for (int i = 941; i <= 1000; i++) {
     string url = string("https://www.j-archive.com/showgame.php?game_id=") + std::to_string(i);
 
   CURLcode parsed_page_code = parser.retrieve_web_page(url.c_str(), &game);

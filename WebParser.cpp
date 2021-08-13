@@ -352,8 +352,13 @@ void WebParser::parse_game_page(htmlDocPtr doc, Game *game_ptr) {
   xmlNode *root_element = xmlDocGetRootElement(doc);
 
   xmlNode *title_node = find_node(root_element, is_title_node);
-  // title hierarchy is div->h1->text
-  string full_title = (char *)title_node->children->children->content;
+  // title hierarchy is usually div->h1->text
+  // however, sometimes there are italics in the title, so we need to go for the next node in that case
+  xmlNode *day_node = title_node->children->children;
+  if (!xmlStrcmp(day_node->name, (const xmlChar *)"i")) {
+    day_node = day_node->next;
+  }
+  string full_title = (char *)day_node->content;
   // just extract the date from string of form "Show #1234 - Monday, January 1, 1000"
   game_ptr->m_air_date = full_title.substr(full_title.find("day, ") + 5);
 
