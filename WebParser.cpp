@@ -161,15 +161,19 @@ void WebParser::parse_clue_helper(xmlNode *node, void *clue_ptr) {
         } else if (!xmlStrcmp(curr_node->name, (const xmlChar *)"a")) {
           // Find the node with text (usually child node, but sometimes deeper)
           xmlNode *text_node = curr_node->children;
-          while (xmlStrcmp(text_node->name, (const xmlChar *)"text")) {
-            text_node = text_node->children;
+
+          // This if statement is needed for some bad links with no text
+          if (text_node) {
+            while (xmlStrcmp(text_node->name, (const xmlChar *)"text")) {
+              text_node = text_node->children;
+            }
+
+            // Add the text of the link, which is in the child node, to the clue
+            clue_text += (char *) text_node->content;
+
+            // gets the text value of the href property, and adds it to the links
+            links.push_back((char *)curr_node->properties->children->content);
           }
-
-          // Add the text of the link, which is in the child node, to the clue
-          clue_text += (char *) text_node->content;
-
-          // gets the text value of the href property, and adds it to the links
-          links.push_back((char *)curr_node->properties->children->content);
         }
 
         curr_node = curr_node->next;
@@ -248,6 +252,24 @@ void WebParser::parse_category_name_helper(xmlNode *node, void *category_ptr) {
       xmlNode *text_node = node->children;
       if (!xmlStrcmp(text_node->name, (const xmlChar *) "text")) {
         cast_category_ptr->m_title = (char *) text_node->content;
+      } else if (!xmlStrcmp(text_node->name, (const xmlChar *) "em") ||
+                 !xmlStrcmp(text_node->name, (const xmlChar *) "i")) {
+        string title_builder = "";
+
+        // while loop to handle multiple separate formatted sections
+        while (text_node) {
+          // get formatted text
+          title_builder += (char *) text_node->children->content;
+
+          // get non-formatted text
+          text_node = text_node->next;
+          if (text_node) {
+            title_builder += (char *) text_node->content;
+            text_node = text_node->next;
+          }
+        }
+
+        cast_category_ptr->m_title = title_builder;
       } else if (!xmlStrcmp(text_node->name, (const xmlChar *) "a")) {
 
         // Normally, the text of the link is in the child node, but occasionally it can be split up due to extra
@@ -354,11 +376,11 @@ void WebParser::parse_game_page(htmlDocPtr doc, Game *game_ptr) {
   xmlNode *title_node = find_node(root_element, is_title_node);
   // title hierarchy is usually div->h1->text
   // however, sometimes there are italics in the title, so we need to go for the next node in that case
-  xmlNode *day_node = title_node->children->children;
-  if (!xmlStrcmp(day_node->name, (const xmlChar *)"i")) {
-    day_node = day_node->next;
+  xmlNode *date_node = title_node->children->children;
+  if (!xmlStrcmp(date_node->name, (const xmlChar *)"i")) {
+    date_node = date_node->next;
   }
-  string full_title = (char *)day_node->content;
+  string full_title = (char *)date_node->content;
   // just extract the date from string of form "Show #1234 - Monday, January 1, 1000"
   game_ptr->m_air_date = full_title.substr(full_title.find("day, ") + 5);
 
@@ -373,4 +395,6 @@ void WebParser::parse_game_page(htmlDocPtr doc, Game *game_ptr) {
   xmlNode *final_jeopardy_node = find_node(root_element, is_final_jeopardy_node);
   Category final_jeopardy = parse_final_jeopardy(final_jeopardy_node);
   game_ptr->m_final_jeopardy = final_jeopardy;
+
+  // TODO: handle tiebreaker rounds
 }

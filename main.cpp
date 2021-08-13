@@ -35,7 +35,14 @@ int main() {
   // run 9: 501-1000, I think broke on 940?
   // run 10: fixed 940
   // run 11: 941-1000, success
-  for (int i = 941; i <= 1000; i++) {
+  // run 12: realized 1-172 are valid, so running those
+  // run 13: 1001-1500, failed on 1132, no data for 1132-1135 other than dates and contestants, so skipping them
+  // run 14: 1136-1500, broke on 1153 (also no data), but noticed that 1152 had a tiebreaker round that wasn't covered
+  // ... tiebreaks are rare, though, and I'm lazy, so... just gonna skip them
+  // run 15: 1154-1500, failed on 1385
+  // run 16: fixed 1385, but noticed error with category names with underlines (and no links, unlike 233)
+  // manually fixed missing underline categories, next run should start with 1386
+  for (int i = 1386; i <= 1500; i++) {
     string url = string("https://www.j-archive.com/showgame.php?game_id=") + std::to_string(i);
 
   CURLcode parsed_page_code = parser.retrieve_web_page(url.c_str(), &game);
