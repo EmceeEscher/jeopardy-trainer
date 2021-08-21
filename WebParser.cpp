@@ -165,14 +165,19 @@ void WebParser::parse_clue_helper(xmlNode *node, void *clue_ptr) {
           // This if statement is needed for some bad links with no text
           if (text_node) {
             while (xmlStrcmp(text_node->name, (const xmlChar *)"text")) {
-              text_node = text_node->children;
+              // Weird conditional needed to handle edge case of <br> tags inside of <a>
+              // Because <br> tags have the text in ->next instead of ->children
+              text_node = text_node->children ? text_node->children : text_node->next;
             }
 
             // Add the text of the link, which is in the child node, to the clue
             clue_text += (char *) text_node->content;
 
             // gets the text value of the href property, and adds it to the links
-            links.push_back((char *)curr_node->properties->children->content);
+            // (a few malformed a tags have no href, which is why we need the if)
+            if (curr_node->properties) {
+              links.push_back((char *) curr_node->properties->children->content);
+            }
           }
         }
 
@@ -253,7 +258,8 @@ void WebParser::parse_category_name_helper(xmlNode *node, void *category_ptr) {
       if (!xmlStrcmp(text_node->name, (const xmlChar *) "text")) {
         cast_category_ptr->m_title = (char *) text_node->content;
       } else if (!xmlStrcmp(text_node->name, (const xmlChar *) "em") ||
-                 !xmlStrcmp(text_node->name, (const xmlChar *) "i")) {
+                 !xmlStrcmp(text_node->name, (const xmlChar *) "i") ||
+                 !xmlStrcmp(text_node->name, (const xmlChar *) "u")) {
         string title_builder = "";
 
         // while loop to handle multiple separate formatted sections
@@ -385,16 +391,22 @@ void WebParser::parse_game_page(htmlDocPtr doc, Game *game_ptr) {
   game_ptr->m_air_date = full_title.substr(full_title.find("day, ") + 5);
 
   xmlNode *jeopardy_node = find_node(root_element, is_jeopardy_node);
-  vector<Category> single_jeopardy_categories = parse_round(jeopardy_node, false);
-  game_ptr->m_single_jeopardy = single_jeopardy_categories;
+  if (jeopardy_node) {
+    vector<Category> single_jeopardy_categories = parse_round(jeopardy_node, false);
+    game_ptr->m_single_jeopardy = single_jeopardy_categories;
+  }
 
   xmlNode *double_jeopardy_node = find_node(root_element, is_double_jeopardy_node);
-  vector<Category> double_jeopardy_categories = parse_round(double_jeopardy_node, true);
-  game_ptr->m_double_jeopardy = double_jeopardy_categories;
+  if (double_jeopardy_node) {
+    vector<Category> double_jeopardy_categories = parse_round(double_jeopardy_node, true);
+    game_ptr->m_double_jeopardy = double_jeopardy_categories;
+  }
 
   xmlNode *final_jeopardy_node = find_node(root_element, is_final_jeopardy_node);
-  Category final_jeopardy = parse_final_jeopardy(final_jeopardy_node);
-  game_ptr->m_final_jeopardy = final_jeopardy;
+  if (final_jeopardy_node) {
+    Category final_jeopardy = parse_final_jeopardy(final_jeopardy_node);
+    game_ptr->m_final_jeopardy = final_jeopardy;
+  }
 
   // TODO: handle tiebreaker rounds
 }

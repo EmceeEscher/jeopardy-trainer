@@ -42,7 +42,23 @@ int main() {
   // run 15: 1154-1500, failed on 1385
   // run 16: fixed 1385, but noticed error with category names with underlines (and no links, unlike 233)
   // manually fixed missing underline categories, next run should start with 1386
-  for (int i = 1386; i <= 1500; i++) {
+  // run 17: 1386-1500, worked
+  // run 18: 1501-2000, broke on 1794
+  // run 19: fixed 1794
+  // run 20: 1795-2000, WORKED
+  // run 21: 2001-2500, worked
+  // run 22: 2501-3000, worked
+  // run 23: 3001-3500, worked
+  // run 24: 3501-4000, broke on 3575
+  // run 25: added special casing for 3575 (only had one round)
+  // run 26: also did 3576 with special casing
+  // run 27: removed special casing, did 3577-4000, worked
+  // run 28: 4001-4500, broke on 4246 due to same special casing
+  // run 29: 4246
+  // run 30: 4247-4500, broke on 4380 but too tired to fix rn
+  // run 31: 4380 fixed
+  // run 32: 4381-4500
+  for (int i = 4381; i <= 4500; i++) {
     string url = string("https://www.j-archive.com/showgame.php?game_id=") + std::to_string(i);
 
   CURLcode parsed_page_code = parser.retrieve_web_page(url.c_str(), &game);
