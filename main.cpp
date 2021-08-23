@@ -57,8 +57,17 @@ int main() {
   // run 29: 4246
   // run 30: 4247-4500, broke on 4380 but too tired to fix rn
   // run 31: 4380 fixed
-  // run 32: 4381-4500
-  for (int i = 4381; i <= 4500; i++) {
+  // run 32: 4381-4500, complete
+  // run 33: 4501-5000, broke on 4502 lol
+  // run 34: fixed 4502
+  // run 35: 4503-5000, worked
+  // run 36: 5001-5500, done
+  // run 37: 5501-6000
+  // run 38: 6001-6500, skipped 6165 for some reason?
+  // run 39: ran 6165 separately
+  // run 40: 6501-7000
+  // run 41: 7001-7140, done! as of 8/22/21
+  for (int i = 7001; i <= 7140; i++) {
     string url = string("https://www.j-archive.com/showgame.php?game_id=") + std::to_string(i);
 
   CURLcode parsed_page_code = parser.retrieve_web_page(url.c_str(), &game);

@@ -130,7 +130,7 @@ bool WebParser::is_tr_node(xmlNode *node) {
   return check_node(node, "tr", "", "");
 }
 
-void WebParser::parse_nodes(xmlNode *root_node, std::function<void (xmlNode *, void *)> parse_func, void *parse_struct) {
+void WebParser::parse_nodes(xmlNode *root_node, std::function<void (xmlNode *, void *)>   parse_func, void *parse_struct) {
   xmlNode *curr_node = NULL;
 
   for (curr_node = root_node; curr_node; curr_node = curr_node->next) {
@@ -255,6 +255,12 @@ void WebParser::parse_category_name_helper(xmlNode *node, void *category_ptr) {
       // TODO: figure out the category type here? based on the title?
 
       xmlNode *text_node = node->children;
+
+      // special casing for <a> node nested under <em> node, but I don't think I want it for general cases
+//      if (!xmlStrcmp(text_node->name, (const xmlChar *) "em")) {
+//        text_node = text_node->children;
+//      }
+
       if (!xmlStrcmp(text_node->name, (const xmlChar *) "text")) {
         cast_category_ptr->m_title = (char *) text_node->content;
       } else if (!xmlStrcmp(text_node->name, (const xmlChar *) "em") ||
