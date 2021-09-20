@@ -16,13 +16,50 @@ using namespace web_parser;
 using namespace game;
 using std::string;
 
-int main() {
+// Note to future self:
+// To run from command line
+// navigate to build directory, then run:
+// cmake ..
+// make
+// ./jeopardy_trainer [start_game] [end_game]
+
+
+// Code for parsing int from command line arguments stolen from Stack Overflow:
+// https://stackoverflow.com/questions/2797813/how-to-convert-a-command-line-argument-to-int
+int parse_arg(string arg) {
+  try {
+    std::size_t pos;
+    int x = std::stoi(arg, &pos);
+    if (pos < arg.size()) {
+      std::cerr << "Trailing characters after number: " << arg << '\n';
+    }
+
+    return x;
+  } catch (std::invalid_argument const &ex) {
+    std::cerr << "Invalid number: " << arg << '\n';
+    return -1;
+  } catch (std::out_of_range const &ex) {
+    std::cerr << "Number out of range: " << arg << '\n';
+    return -1;
+  }
+}
+
+int main(int argc, char **argv) {
+  if (argc != 3) {
+    std::cout << "Wrong number of args! First value is first game to parse, second is last game to parse" << std::endl;
+    return 1;
+  }
+
   DbHandler db_handler = DbHandler();
   db_handler.setup_db_conn();
 
   WebParser parser = WebParser();
 
   Game game;
+
+  int start_idx = parse_arg(argv[1]);
+  int end_idx = parse_arg(argv[2]);
+
   // run 1: 173
   // run 2: 174-200, failed with segfault after completing 191
   // run 3: 192, fails with segfault! (so not a memory leak??)
@@ -67,7 +104,8 @@ int main() {
   // run 39: ran 6165 separately
   // run 40: 6501-7000
   // run 41: 7001-7140, done! as of 8/22/21
-  for (int i = 7001; i <= 7140; i++) {
+
+  for (int i = start_idx; i <= end_idx; i++) {
     string url = string("https://www.j-archive.com/showgame.php?game_id=") + std::to_string(i);
 
   CURLcode parsed_page_code = parser.retrieve_web_page(url.c_str(), &game);

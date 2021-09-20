@@ -37,3 +37,6 @@ cmake-build-debug
 
 # Mac bullshit
 *.DS_Store
+
+# build files
+*build/
